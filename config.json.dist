@@ -1,4 +1,6 @@
 {
   "madminUrl": "",
+  "madminUsername": null,
+  "madminPassword": null,
   "discordWebhook": ""
 }
