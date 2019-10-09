@@ -4,7 +4,9 @@ const {
   madminUrl,
   discordWebhook,
   madminUsername,
-  madminPassword
+  madminPassword,
+  telegramToken,
+  telegramChatId
 } = require('./config');
 
 const now = Math.floor(new Date().getTime() / 1000);
@@ -40,9 +42,15 @@ const oneMinuteAgo = now - 64;
     return output;
   }, 'Encountered shinies:');
 
-  await axios.post(discordWebhook, {
-    username: shinyStats[0].name,
-    avatar_url: `${madminUrl}/${shinyStats[0].img}`,
-    content: output
-  });
+  if (discordWebhook && discordWebhook !== '') {
+    await axios.post(discordWebhook, {
+      username: shinyStats[0].name,
+      avatar_url: `${madminUrl}/${shinyStats[0].img}`,
+      content: output
+    });
+  }
+
+  if (telegramToken && telegramToken !== '' && telegramChatId && telegramChatId !== '') {
+    await axios.get(`https://api.telegram.org/bot${telegramToken}/sendMessage?chat_id=${telegramChatId}&parse_mode=markdown&text=${output.replace(/\*\*/g, '*')}`);
+  }
 })();

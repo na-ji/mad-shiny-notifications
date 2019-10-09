@@ -2,5 +2,7 @@
   "madminUrl": "",
   "madminUsername": null,
   "madminPassword": null,
-  "discordWebhook": ""
+  "discordWebhook": null,
+  "telegramToken": null,
+  "telegramChatId": null
 }
