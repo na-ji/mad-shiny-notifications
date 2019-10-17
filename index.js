@@ -37,10 +37,10 @@ const oneMinuteAgo = now - 64;
 
   const { shiny_statistics: shinyStats } = response;
   const output = shinyStats.reduce((output, shiny) => {
-    output += `\n - **${shiny.name}** at **${shiny.timestamp}** by **${shiny.worker}** at **${shiny.lat_5},${shiny.lng_5}**`;
+    output += `- **${shiny.name}** at **${shiny.timestamp}** by **${shiny.worker}** at **${shiny.lat_5},${shiny.lng_5}**\n`;
 
     return output;
-  }, 'Encountered shinies:');
+  }, '');
 
   if (discordWebhook && discordWebhook !== '') {
     await axios.post(discordWebhook, {
