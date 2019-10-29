@@ -16,7 +16,6 @@ const timeoutAgo = now - timeout;
 
 const run = async () => {
   try {
-    potapotato++
     const options = {};
     if (
       madminUsername &&
