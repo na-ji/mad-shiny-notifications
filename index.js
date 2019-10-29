@@ -12,7 +12,7 @@ const {
 
 const now = Math.floor(new Date().getTime() / 1000);
 const timeout = (+interval ? +interval : 60) * 1000;
-const timeoutAgo = now - timeout;
+const timeoutAgo = now - (+interval ? +interval : 60);
 
 const run = async () => {
   try {
