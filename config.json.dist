@@ -4,5 +4,6 @@
   "madminPassword": null,
   "discordWebhook": null,
   "telegramToken": null,
-  "telegramChatId": null
+  "telegramChatId": null,
+  "interval": 60
 }
