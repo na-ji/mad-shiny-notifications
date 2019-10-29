@@ -11,67 +11,61 @@ const {
 } = require('./config');
 
 const now = Math.floor(new Date().getTime() / 1000);
-const timeout = +interval ? +interval : 60;
+const timeout = (+interval ? +interval : 60) * 1000;
 const timeoutAgo = now - timeout;
 
-function sleep(s) {  return new Promise((resolve) => setTimeout(resolve, s * 1000)); }
-
 const run = async () => {
-  while(true){
-    try {
-      const options = {};
-      if (
-        madminUsername &&
-        madminUsername !== '' &&
-        madminPassword &&
-        madminPassword !== ''
-        ) {
-          options.auth = {
-            username: madminUsername,
-            password: madminPassword
-          };
-        }
-        
-      const response = (await axios.get(
-        `${madminUrl}/get_game_stats_shiny?from=${timeoutAgo}&to=${now}`,
-        options
-        )).data;
-      console.log({ now, timeoutAgo, response });
-      if (response.empty) {
-        await sleep(timeout);
-        return;
+  try {
+    potapotato++
+    const options = {};
+    if (
+      madminUsername &&
+      madminUsername !== '' &&
+      madminPassword &&
+      madminPassword !== ''
+      ) {
+        options.auth = {
+          username: madminUsername,
+          password: madminPassword
+        };
       }
       
-      const { shiny_statistics: shinyStats } = response;
-      const output = shinyStats.reduce((output, shiny) => {
-        output += `- **${shiny.name}** at **${shiny.timestamp}** by **${shiny.worker}** at **${shiny.lat_5},${shiny.lng_5}**\n`;
-        
-        return output;
-      }, '');
-      
-      if (discordWebhook && discordWebhook !== '') {
-        await axios.post(discordWebhook, {
-          username: shinyStats[0].name,
-          avatar_url: `${madminUrl}/${shinyStats[0].img}`,
-          content: output
-        });
-      }
-      
-      if (telegramToken && telegramToken !== '' && telegramChatId && telegramChatId !== '') {
-        await axios.get(`https://api.telegram.org/bot${telegramToken}/sendMessage?chat_id=${telegramChatId}&parse_mode=markdown&text=${output.replace(/\*\*/g, '*')}`);
-      }
-      
-      await sleep(timeout);
-        
+    const response = (await axios.get(
+      `${madminUrl}/get_game_stats_shiny?from=${timeoutAgo}&to=${now}`,
+      options
+      )).data;
+    console.log({ now, timeoutAgo, response });
+    if (response.empty) {
+      return;
     }
-    catch (err) {
-      console.log('Something wen\'t wrong, check error: ', err )
-      process.exit(1)
+    
+    const { shiny_statistics: shinyStats } = response;
+    const output = shinyStats.reduce((output, shiny) => {
+      output += `- **${shiny.name}** at **${shiny.timestamp}** by **${shiny.worker}** at **${shiny.lat_5},${shiny.lng_5}**\n`;
+      
+      return output;
+    }, '');
+    
+    if (discordWebhook && discordWebhook !== '') {
+      await axios.post(discordWebhook, {
+        username: shinyStats[0].name,
+        avatar_url: `${madminUrl}/${shinyStats[0].img}`,
+        content: output
+      });
     }
+    
+    if (telegramToken && telegramToken !== '' && telegramChatId && telegramChatId !== '') {
+      await axios.get(`https://api.telegram.org/bot${telegramToken}/sendMessage?chat_id=${telegramChatId}&parse_mode=markdown&text=${output.replace(/\*\*/g, '*')}`);
+    }
+    
+    
   }
-        
+  catch (err) {
+    console.log('Something wen\'t wrong, check error: ', err )
+  }
 };
-
+        
 run()
+setInterval(run, timeout)
 
       
