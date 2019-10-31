@@ -10,12 +10,12 @@ const {
   interval,
 } = require('./config');
 
-const now = Math.floor(new Date().getTime() / 1000);
 const timeout = (+interval ? +interval : 60) * 1000;
-const timeoutAgo = now - (+interval ? +interval : 60);
 
 const run = async () => {
   try {
+    const now = Math.floor(new Date().getTime() / 1000);
+    const timeoutAgo = now - (+interval ? +interval : 60);
     const options = {};
     if (
       madminUsername &&
