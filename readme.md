@@ -9,7 +9,7 @@ npm install
 Copy the file `config.json.dist` to `config.json` and fill it.
 
 ## Usage
-Add a crontab executing every minute
+Just run the script forever. I recommend a process manager like [pm2](https://github.com/Unitech/pm2).
 ```shell script
-* * * * * /path/to/node /path/to/script/index.js >/dev/null 2>&1
+node index.js
 ```
