@@ -7,7 +7,7 @@ const {
   madminPassword,
   telegramToken,
   telegramChatId,
-  interval,
+  interval
 } = require('./config');
 
 const timeout = (+interval ? +interval : 60) * 1000;
@@ -22,29 +22,29 @@ const run = async () => {
       madminUsername !== '' &&
       madminPassword &&
       madminPassword !== ''
-      ) {
-        options.auth = {
-          username: madminUsername,
-          password: madminPassword
-        };
-      }
-      
+    ) {
+      options.auth = {
+        username: madminUsername,
+        password: madminPassword
+      };
+    }
+
     const response = (await axios.get(
       `${madminUrl}/get_game_stats_shiny?from=${timeoutAgo}&to=${now}`,
       options
-      )).data;
+    )).data;
     console.log({ now, timeoutAgo, response });
     if (response.empty) {
       return;
     }
-    
+
     const { shiny_statistics: shinyStats } = response;
     const output = shinyStats.reduce((output, shiny) => {
       output += `- **${shiny.name}** at **${shiny.timestamp}** by **${shiny.worker}** at **${shiny.lat_5},${shiny.lng_5}**\n`;
-      
+
       return output;
     }, '');
-    
+
     if (discordWebhook && discordWebhook !== '') {
       await axios.post(discordWebhook, {
         username: shinyStats[0].name,
@@ -52,19 +52,24 @@ const run = async () => {
         content: output
       });
     }
-    
-    if (telegramToken && telegramToken !== '' && telegramChatId && telegramChatId !== '') {
-      await axios.get(`https://api.telegram.org/bot${telegramToken}/sendMessage?chat_id=${telegramChatId}&parse_mode=markdown&text=${output.replace(/\*\*/g, '*')}`);
+
+    if (
+      telegramToken &&
+      telegramToken !== '' &&
+      telegramChatId &&
+      telegramChatId !== ''
+    ) {
+      await axios.get(
+        `https://api.telegram.org/bot${telegramToken}/sendMessage?chat_id=${telegramChatId}&parse_mode=markdown&text=${output.replace(
+          /\*\*/g,
+          '*'
+        )}`
+      );
     }
-    
-    
-  }
-  catch (err) {
-    console.log('Something wen\'t wrong, check error: ', err )
+  } catch (err) {
+    console.log("Something wen't wrong, check error: ", err);
   }
 };
-        
-run()
-setInterval(run, timeout)
 
-      
+run();
+setInterval(run, timeout);
