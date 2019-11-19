@@ -11,6 +11,7 @@ const {
 } = require('./config');
 
 const timeout = (+interval ? +interval : 60) * 1000;
+const sentNotifications = {};
 
 const run = async () => {
   try {
@@ -34,16 +35,37 @@ const run = async () => {
       options
     )).data;
     console.log({ now, timeoutAgo, response });
+
     if (response.empty) {
       return;
     }
 
     const { shiny_statistics: shinyStats } = response;
+
+    // message generation
     const output = shinyStats.reduce((output, shiny) => {
-      output += `- **${shiny.name}** at **${shiny.timestamp}** by **${shiny.worker}** at **${shiny.lat_5},${shiny.lng_5}**\n`;
+      if (!(shiny.encounter_id in sentNotifications)) {
+        sentNotifications[shiny.encounter_id] =
+          new Date(shiny.timestamp).getTime() / 1000;
+
+        output += `- **${shiny.name}** at **${shiny.timestamp}** by **${shiny.worker}** at **${shiny.lat_5},${shiny.lng_5}**\n`;
+      }
 
       return output;
     }, '');
+
+    // clean up
+    Object.keys(sentNotifications).forEach(encounterId => {
+      if (now > sentNotifications[encounterId] + 3600) {
+        delete sentNotifications[encounterId];
+      }
+    });
+
+    console.log({ output });
+
+    if (output === '') {
+      return;
+    }
 
     if (discordWebhook && discordWebhook !== '') {
       await axios.post(discordWebhook, {
@@ -67,7 +89,7 @@ const run = async () => {
       );
     }
   } catch (err) {
-    console.log("Something wen't wrong, check error: ", err);
+    console.log('Something went wrong, check error: ', err);
   }
 };
 
