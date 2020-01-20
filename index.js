@@ -1,4 +1,5 @@
 const axios = require('axios');
+const { createLogger, format, transports } = require('winston');
 
 const {
   madminUrl,
@@ -7,11 +8,34 @@ const {
   madminPassword,
   telegramToken,
   telegramChatId,
+  disableLogPersist,
   interval
 } = require('./config');
 
 const timeout = (+interval ? +interval : 60) * 1000;
 const sentNotifications = {};
+
+const logger = createLogger({
+  level: 'info',
+  format: format.combine(
+    format.timestamp({
+      format: 'YYYY-MM-DD HH:mm:ss'
+    }),
+    format.errors({ stack: true }),
+    format.splat(),
+    format.json()
+  ),
+  transports: [
+    new transports.Console({
+      format: format.combine(format.colorize(), format.simple())
+    })
+  ]
+});
+
+if (!disableLogPersist) {
+  logger.add(new transports.File({ filename: 'error.log', level: 'error' }));
+  logger.add(new transports.File({ filename: 'combined.log' }));
+}
 
 const run = async () => {
   try {
@@ -34,7 +58,7 @@ const run = async () => {
       `${madminUrl}/get_game_stats_shiny?from=${timeoutAgo}&to=${now}`,
       options
     )).data;
-    console.log({ now, timeoutAgo, response });
+    logger.info('Response received:', { now, timeoutAgo, response });
 
     if (response.empty) {
       return;
@@ -63,7 +87,7 @@ const run = async () => {
       }
     });
 
-    console.log({ output });
+    logger.info('Message to send', { output });
 
     if (output === '') {
       return;
@@ -90,8 +114,8 @@ const run = async () => {
         )}`
       );
     }
-  } catch (err) {
-    console.log('Something went wrong, check error: ', err);
+  } catch (error) {
+    logger.error('Something went wrong, check error: ', error);
   }
 };
 
