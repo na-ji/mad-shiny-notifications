@@ -44,8 +44,10 @@ const run = async () => {
 
     // message generation
     const output = shinyStats.reduce((output, shiny) => {
-      if (!(shiny.encounter_id in sentNotifications)) {
-        sentNotifications[shiny.encounter_id] =
+      const cacheKey = `e${shiny.encounter_id}-m${shiny.mon_id}-f${shiny.form}`;
+
+      if (!(cacheKey in sentNotifications)) {
+        sentNotifications[cacheKey] =
           new Date(shiny.timestamp).getTime() / 1000;
 
         output += `- **${shiny.name}** at **${shiny.timestamp}** by **${shiny.worker}** at **${shiny.lat_5},${shiny.lng_5}**\n`;
@@ -55,9 +57,9 @@ const run = async () => {
     }, '');
 
     // clean up
-    Object.keys(sentNotifications).forEach(encounterId => {
-      if (now > sentNotifications[encounterId] + 3600) {
-        delete sentNotifications[encounterId];
+    Object.keys(sentNotifications).forEach(cacheKey => {
+      if (now > sentNotifications[cacheKey] + 3600) {
+        delete sentNotifications[cacheKey];
       }
     });
 
