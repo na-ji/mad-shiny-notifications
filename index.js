@@ -13,6 +13,7 @@ const {
 } = require('./config');
 
 const timeout = (+interval ? +interval : 60) * 1000;
+let timeoutAgo;
 const sentNotifications = {};
 
 const logger = createLogger({
@@ -40,7 +41,9 @@ if (!disableLogPersist) {
 const run = async () => {
   try {
     const now = Math.floor(new Date().getTime() / 1000);
-    const timeoutAgo = now - (+interval ? +interval : 60);
+    if (typeof timeoutAgo === 'undefined') {
+      timeoutAgo = now - (+interval ? +interval : 60);
+    }
     const options = {};
     if (
       madminUsername &&
@@ -59,6 +62,8 @@ const run = async () => {
       options
     )).data;
     logger.info('Response received:', { now, timeoutAgo, response });
+
+    timeoutAgo = now;
 
     if (response.empty) {
       return;
