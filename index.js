@@ -38,6 +38,18 @@ if (!disableLogPersist) {
   logger.add(new transports.File({ filename: 'combined.log' }));
 }
 
+const sleep = milliseconds => {
+  return new Promise(resolve => setTimeout(resolve, milliseconds));
+};
+
+const sendTelegramMessage = message => {
+  return axios.get(
+    `https://api.telegram.org/bot${telegramToken}/sendMessage?chat_id=${telegramChatId}&parse_mode=markdown&text=${escape(
+      message.replace(/\*\*/g, '*')
+    )}`
+  );
+};
+
 const run = async () => {
   try {
     const now = Math.floor(new Date().getTime() / 1000);
@@ -115,12 +127,13 @@ const run = async () => {
       telegramChatId &&
       telegramChatId !== ''
     ) {
-      await axios.get(
-        `https://api.telegram.org/bot${telegramToken}/sendMessage?chat_id=${telegramChatId}&parse_mode=markdown&text=${output.replace(
-          /\*\*/g,
-          '*'
-        )}`
-      );
+      try {
+        await sendTelegramMessage(output);
+      } catch (error) {
+        logger.warn('Telegram failed, trying again...');
+        await sleep(1000);
+        await sendTelegramMessage(output);
+      }
     }
   } catch (error) {
     logger.error('Something went wrong, check error: ', error);
