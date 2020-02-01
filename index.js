@@ -101,7 +101,10 @@ const run = async () => {
     if (discordWebhook && discordWebhook !== '') {
       await axios.post(discordWebhook, {
         username: shinyStats[0].name,
-        avatar_url: `${madminUrl}/${shinyStats[0].img}`,
+        avatar_url: `https://raw.githubusercontent.com/ZeChrales/PogoAssets/master/pokemon_icons/${shinyStats[0].img.replace(
+          'asset/pokemon_icons',
+          ''
+        )}`,
         content: output
       });
     }
