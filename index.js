@@ -44,7 +44,7 @@ const sleep = milliseconds => {
 
 const sendTelegramMessage = message => {
   return axios.get(
-    `https://api.telegram.org/bot${telegramToken}/sendMessage?chat_id=${telegramChatId}&parse_mode=markdown&text=${escape(
+    `https://api.telegram.org/bot${telegramToken}/sendMessage?chat_id=${telegramChatId}&parse_mode=markdown&text=${encodeURIComponent(
       message.replace(/\*\*/g, '*')
     )}`
   );
