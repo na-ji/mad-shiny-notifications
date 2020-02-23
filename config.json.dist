@@ -1,5 +1,6 @@
 {
   "mysqlHost": "localhost",
+  "mysqlPort": 3306,
   "mysqlUser": null,
   "mysqlDatabase": null,
   "mysqlPassword": null,

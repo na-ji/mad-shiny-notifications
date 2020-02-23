@@ -5,6 +5,7 @@ const pokedex = require('pokemon');
 
 const {
   mysqlHost,
+  mysqlPort,
   mysqlUser,
   mysqlDatabase,
   mysqlPassword,
@@ -71,6 +72,7 @@ const run = async () => {
     if (!connection) {
       connection = await mysql.createConnection({
         host: mysqlHost,
+        port: mysqlPort,
         user: mysqlUser,
         database: mysqlDatabase,
         password: mysqlPassword,
