@@ -1,7 +1,9 @@
 {
-  "madminUrl": "",
-  "madminUsername": null,
-  "madminPassword": null,
+  "mysqlHost": "localhost",
+  "mysqlUser": null,
+  "mysqlDatabase": null,
+  "mysqlPassword": null,
+  "locale": "en",
   "discordWebhook": null,
   "telegramToken": null,
   "telegramChatId": null,

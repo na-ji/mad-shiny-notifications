@@ -1,11 +1,15 @@
 const axios = require('axios');
 const { createLogger, format, transports } = require('winston');
+const mysql = require('mysql2/promise');
+const pokedex = require('pokemon');
 
 const {
-  madminUrl,
+  mysqlHost,
+  mysqlUser,
+  mysqlDatabase,
+  mysqlPassword,
+  locale,
   discordWebhook,
-  madminUsername,
-  madminPassword,
   telegramToken,
   telegramChatId,
   disableLogPersist,
@@ -13,8 +17,8 @@ const {
 } = require('./config');
 
 const timeout = (+interval ? +interval : 60) * 1000;
-let timeoutAgo;
 const sentNotifications = {};
+let connection;
 
 const logger = createLogger({
   level: 'info',
@@ -32,6 +36,17 @@ const logger = createLogger({
     })
   ]
 });
+
+if (!mysqlHost || !mysqlUser || !mysqlDatabase) {
+  console.error('Please fill database informations');
+  process.exit(1);
+}
+
+if (!pokedex.languages.has(locale)) {
+  console.error('Unsupported locale');
+  console.log(`Supported locales are: ${Array.from(pokedex.languages)}`);
+  process.exit(1);
+}
 
 if (!disableLogPersist) {
   logger.add(new transports.File({ filename: 'error.log', level: 'error' }));
@@ -53,45 +68,63 @@ const sendTelegramMessage = message => {
 const run = async () => {
   try {
     const now = Math.floor(new Date().getTime() / 1000);
-    if (typeof timeoutAgo === 'undefined') {
-      timeoutAgo = now - (+interval ? +interval : 60);
-    }
-    const options = {};
-    if (
-      madminUsername &&
-      madminUsername !== '' &&
-      madminPassword &&
-      madminPassword !== ''
-    ) {
-      options.auth = {
-        username: madminUsername,
-        password: madminPassword
-      };
+    if (!connection) {
+      connection = await mysql.createConnection({
+        host: mysqlHost,
+        user: mysqlUser,
+        database: mysqlDatabase,
+        password: mysqlPassword,
+        timezone: 'Z'
+      });
     }
 
-    const response = (await axios.get(
-      `${madminUrl}/get_game_stats_shiny?from=${timeoutAgo}&to=${now}`,
-      options
-    )).data;
-    logger.info('Response received:', { now, timeoutAgo, response });
+    const [rows] = await connection.execute(`SELECT encounter_id,
+             pokemon_id,
+             form,
+             individual_attack,
+             individual_defense,
+             individual_stamina,
+             disappear_time,
+             cp,
+             cp_multiplier,
+             move_1,
+             move_2,
+             gender,
+             longitude,
+             latitude,
+             t.worker,
+             t.timestamp_scan
+      FROM pokemon
+               LEFT JOIN trs_stats_detect_raw t ON encounter_id = CAST(t.type_id AS UNSIGNED INTEGER)
+      WHERE disappear_time > utc_timestamp()
+        AND individual_attack IS NOT NULL
+        AND t.type = 'mon_iv'
+        AND t.is_shiny = 1
+      ORDER BY pokemon_id DESC, disappear_time DESC
+    `);
 
-    timeoutAgo = now;
+    logger.info('Response received:', { rows });
 
-    if (response.empty) {
+    if (rows.length === 0) {
       return;
     }
 
-    const { shiny_statistics: shinyStats } = response;
-
     // message generation
-    const output = shinyStats.reduce((output, shiny) => {
-      const cacheKey = `e${shiny.encounter_id}-m${shiny.mon_id}-f${shiny.form}`;
+    const output = rows.reduce((output, shiny) => {
+      const cacheKey = `e${shiny.encounter_id}-m${shiny.pokemon_id}-f${shiny.form}`;
+
+      shiny.name = pokedex.getName(shiny.pokemon_id, locale);
+      shiny.img = `pokemon_icon_${shiny.pokemon_id}_00_shiny.png`;
+      const encounterDate = new Date(shiny.timestamp_scan * 1000);
 
       if (!(cacheKey in sentNotifications)) {
-        sentNotifications[cacheKey] =
-          new Date(shiny.timestamp).getTime() / 1000;
+        sentNotifications[cacheKey] = encounterDate.getTime() / 1000;
 
-        output += `- **${shiny.name}** at **${shiny.timestamp}** by **${shiny.worker}** at **${shiny.lat_5},${shiny.lng_5}**\n`;
+        output += `- **${
+          shiny.name
+        }** at **${encounterDate.getHours()}:${encounterDate.getMinutes()}:${encounterDate.getSeconds()}** dsp **${shiny.disappear_time.getHours()}:${shiny.disappear_time.getMinutes()}:${shiny.disappear_time.getSeconds()}** by **${
+          shiny.worker
+        }** at **${shiny.latitude.toFixed(5)},${shiny.longitude.toFixed(5)}**\n`;
       }
 
       return output;
@@ -112,21 +145,13 @@ const run = async () => {
 
     if (discordWebhook && discordWebhook !== '') {
       await axios.post(discordWebhook, {
-        username: shinyStats[0].name,
-        avatar_url: `https://raw.githubusercontent.com/ZeChrales/PogoAssets/master/pokemon_icons/${shinyStats[0].img.replace(
-          'asset/pokemon_icons',
-          ''
-        )}`,
+        username: rows[0].name,
+        avatar_url: `https://raw.githubusercontent.com/ZeChrales/PogoAssets/master/pokemon_icons/${rows[0].img}`,
         content: output
       });
     }
 
-    if (
-      telegramToken &&
-      telegramToken !== '' &&
-      telegramChatId &&
-      telegramChatId !== ''
-    ) {
+    if (telegramToken && telegramToken !== '' && telegramChatId && telegramChatId !== '') {
       try {
         await sendTelegramMessage(output);
       } catch (error) {
