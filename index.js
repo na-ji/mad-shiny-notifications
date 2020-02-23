@@ -103,11 +103,13 @@ const run = async () => {
       ORDER BY pokemon_id DESC, disappear_time DESC
     `);
 
-    logger.info('Response received:', { rows });
+    logger.info('Result:', { rows });
 
     if (rows.length === 0) {
       return;
     }
+
+    let firstShiny;
 
     // message generation
     const output = rows.reduce((output, shiny) => {
@@ -118,6 +120,10 @@ const run = async () => {
       const encounterDate = new Date(shiny.timestamp_scan * 1000);
 
       if (!(cacheKey in sentNotifications)) {
+        if (!firstShiny) {
+          firstShiny = shiny;
+        }
+
         sentNotifications[cacheKey] = encounterDate.getTime() / 1000;
 
         output += `- **${
@@ -145,8 +151,8 @@ const run = async () => {
 
     if (discordWebhook && discordWebhook !== '') {
       await axios.post(discordWebhook, {
-        username: rows[0].name,
-        avatar_url: `https://raw.githubusercontent.com/ZeChrales/PogoAssets/master/pokemon_icons/${rows[0].img}`,
+        username: firstShiny.name,
+        avatar_url: `https://raw.githubusercontent.com/ZeChrales/PogoAssets/master/pokemon_icons/${firstShiny.img}`,
         content: output
       });
     }
