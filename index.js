@@ -2,6 +2,7 @@ const axios = require('axios');
 const { createLogger, format, transports } = require('winston');
 const mysql = require('mysql2/promise');
 const pokedex = require('pokemon');
+const moment = require('moment');
 
 const {
   mysqlHost,
@@ -118,21 +119,20 @@ const run = async () => {
       const cacheKey = `e${shiny.encounter_id}-m${shiny.pokemon_id}-f${shiny.form}`;
 
       shiny.name = pokedex.getName(shiny.pokemon_id, locale);
-      shiny.img = `pokemon_icon_${shiny.pokemon_id}_00_shiny.png`;
-      const encounterDate = new Date(shiny.timestamp_scan * 1000);
+      shiny.img = `pokemon_icon_${`${shiny.pokemon_id}`.padStart(3, '0')}_00.png`;
 
       if (!(cacheKey in sentNotifications)) {
         if (!firstShiny) {
           firstShiny = shiny;
         }
 
-        sentNotifications[cacheKey] = encounterDate.getTime() / 1000;
+        sentNotifications[cacheKey] = shiny.timestamp_scan;
+        const disappearTime = moment(shiny.disappear_time);
+        const timeLeft = moment.utc(disappearTime.diff(moment()));
 
-        output += `- **${
-          shiny.name
-        }** at **${encounterDate.getHours()}:${encounterDate.getMinutes()}:${encounterDate.getSeconds()}** dsp **${shiny.disappear_time.getHours()}:${shiny.disappear_time.getMinutes()}:${shiny.disappear_time.getSeconds()}** by **${
-          shiny.worker
-        }** at **${shiny.latitude.toFixed(5)},${shiny.longitude.toFixed(5)}**\n`;
+        output += `- **${shiny.name}**  dsp **${disappearTime.format('HH:mm:ss')}** (**${timeLeft.format(
+          'mm:ss'
+        )}**) by **${shiny.worker}** at **${shiny.latitude.toFixed(5)},${shiny.longitude.toFixed(5)}**\n`;
       }
 
       return output;
@@ -154,7 +154,7 @@ const run = async () => {
     if (discordWebhook && discordWebhook !== '') {
       await axios.post(discordWebhook, {
         username: firstShiny.name,
-        avatar_url: `https://raw.githubusercontent.com/ZeChrales/PogoAssets/master/pokemon_icons/${firstShiny.img}`,
+        avatar_url: `https://raw.githubusercontent.com/Plaryu/PJSsprites/master/${firstShiny.img}`,
         content: output
       });
     }
