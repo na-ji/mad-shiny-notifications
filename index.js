@@ -98,7 +98,7 @@ const run = async () => {
              t.worker,
              t.timestamp_scan
       FROM pokemon
-               LEFT JOIN trs_stats_detect_raw t ON encounter_id = CAST(t.type_id AS UNSIGNED INTEGER)
+               LEFT JOIN trs_stats_detect_mon_raw t ON pokemon.encounter_id = t.encounter_id
       WHERE disappear_time > utc_timestamp()
         AND individual_attack IS NOT NULL
         AND t.type = 'mon_iv'
