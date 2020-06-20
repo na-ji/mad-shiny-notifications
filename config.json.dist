@@ -9,5 +9,6 @@
   "telegramToken": null,
   "telegramChatId": null,
   "disableLogPersist": false,
-  "interval": 60
+  "interval": 60,
+  "exclu_mon": [pokemon_id]
 }
