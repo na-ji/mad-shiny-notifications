@@ -15,7 +15,8 @@ const {
   telegramToken,
   telegramChatId,
   disableLogPersist,
-  interval
+  interval,
+  exclu_mon
 } = require('./config');
 
 const timeout = (+interval ? +interval : 60) * 1000;
@@ -103,6 +104,7 @@ const run = async () => {
         AND individual_attack IS NOT NULL
         AND t.type = 'mon_iv'
         AND t.is_shiny = 1
+        AND pokemon_id not in (${exclu_mon})
       ORDER BY pokemon_id DESC, disappear_time DESC
     `);
 
